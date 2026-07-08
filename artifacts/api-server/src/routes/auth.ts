@@ -7,21 +7,22 @@ const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID || "";
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET || "";
 const DISCORD_OWNER_ID = process.env.DISCORD_OWNER_ID || "";
 const DISCORD_REDIRECT_URI = process.env.DISCORD_REDIRECT_URI || "";
+const REPLIT_DOMAINS = (process.env.REPLIT_DOMAINS || "").split(",").map(d => d.trim()).filter(Boolean);
 const IS_PROD = process.env.NODE_ENV === "production";
 
-function getCallbackUri(req: Request, suffix: string): string {
-  // In production, use the explicit env var if set
-  if (IS_PROD && DISCORD_REDIRECT_URI) {
-    // DISCORD_REDIRECT_URI is the base domain — append the specific callback path
-    const base = DISCORD_REDIRECT_URI.replace(/\/api\/auth.*$/, "");
+function getCallbackUri(_req: Request, suffix: string): string {
+  // 1. Use REPLIT_DOMAINS (reliable in production deployments)
+  if (IS_PROD && REPLIT_DOMAINS.length > 0) {
+    const domain = REPLIT_DOMAINS[0];
+    return `https://${domain}/api/auth${suffix}`;
+  }
+  // 2. Use DISCORD_REDIRECT_URI if it looks like a plain URL (not a Discord auth URL)
+  if (IS_PROD && DISCORD_REDIRECT_URI && !DISCORD_REDIRECT_URI.includes("discord.com/oauth2")) {
+    const base = DISCORD_REDIRECT_URI.replace(/\/api\/auth.*$/, "").replace(/\/$/, "");
     return `${base}/api/auth${suffix}`;
   }
-  const proto = (req.headers["x-forwarded-proto"] as string) || req.protocol;
-  const host =
-    (req.headers["x-forwarded-host"] as string) ||
-    req.get("host") ||
-    "localhost";
-  return `${proto}://${host}/api/auth${suffix}`;
+  // 3. Fallback to request-derived host (dev only)
+  return `https://umbra--utilshaiku.replit.app/api/auth${suffix}`;
 }
 
 declare module "express-session" {
