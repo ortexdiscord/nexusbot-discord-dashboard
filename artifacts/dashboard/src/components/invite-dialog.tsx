@@ -3,8 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, Zap, Copy, Check, ExternalLink } from "lucide-react";
 
-export const INVITE_FULL = "https://discord.com/oauth2/authorize?client_id=1521402625420034058&permissions=4504976970214519&response_type=code&redirect_uri=https%3A%2F%2Fumbra--utilitieshaiku.replit.app%2F&integration_type=0&scope=identify+applications.commands.permissions.update+bot";
-export const INVITE_MIN  = "https://discord.com/oauth2/authorize?client_id=1521402625420034058&permissions=4504976433212503&response_type=code&redirect_uri=https%3A%2F%2Fumbra--utilitieshaiku.replit.app%2F&integration_type=0&scope=identify+applications.commands.permissions.update+bot";
+export const INVITE_FULL = "https://discord.com/oauth2/authorize?client_id=1521402625420034058&permissions=6202794886622326&response_type=code&redirect_uri=https%3A%2F%2Fumbra--utilshaiku.replit.app%2F&integration_type=0&scope=identify+bot+applications.commands.permissions.update";
+export const INVITE_MIN  = "https://discord.com/oauth2/authorize?client_id=1521402625420034058&permissions=4513944463273046&response_type=code&redirect_uri=https%3A%2F%2Fumbra--utilshaiku.replit.app%2F&integration_type=0&scope=identify+bot+applications.commands.permissions.update";
 
 export function InviteDialog({
   open,
