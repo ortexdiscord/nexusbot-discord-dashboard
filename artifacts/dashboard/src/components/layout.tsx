@@ -392,6 +392,29 @@ function SidebarContent({
         </div>
 
         {/* Guide button */}
+        {/* Mobile: Add to Server buttons */}
+        <div className="md:hidden rounded-xl overflow-hidden border border-purple-500/20 bg-purple-500/5 p-2 space-y-1.5">
+          <p className="px-1 text-[10px] font-bold tracking-widest uppercase text-purple-300/40">
+            Add to a Server
+          </p>
+          <button
+            type="button"
+            onClick={() => { onInvite?.("full"); onNavigate?.(); }}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-yellow-300/80 hover:text-yellow-200 hover:bg-white/[0.06]"
+          >
+            <Zap className="size-3 shrink-0" />
+            Full Permissions
+          </button>
+          <button
+            type="button"
+            onClick={() => { onInvite?.("min"); onNavigate?.(); }}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-green-400/70 hover:text-green-300 hover:bg-white/[0.06]"
+          >
+            <ShieldCheck className="size-3 shrink-0" />
+            Minimal Permissions
+          </button>
+        </div>
+
         <button
           type="button"
           onClick={onGuide}

@@ -62,6 +62,7 @@ router.get("/discord", (req: Request, res: Response) => {
   }
 
   const redirectUri = getCallbackUri(req, "/discord/callback");
+  logger.info({ redirectUri, clientId: DISCORD_CLIENT_ID.slice(0, 8) + "..." }, "Discord OAuth redirect");
   const params = new URLSearchParams({
     client_id: DISCORD_CLIENT_ID,
     redirect_uri: redirectUri,

@@ -28,7 +28,7 @@ export function InviteDialog({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md border-0" style={{ background: "#110822", color: "white" }}>
+      <DialogContent className="max-w-[92vw] sm:max-w-md border-0" style={{ background: "#110822", color: "white" }}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-white text-base font-bold">
             {type === "full" ? (
