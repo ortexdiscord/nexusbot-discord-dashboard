@@ -1,5 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { startBot } from "./bot";
 
 const rawPort = process.env["PORT"];
 
@@ -20,6 +21,13 @@ app.listen(port, (err) => {
     logger.error({ err }, "Error listening on port");
     process.exit(1);
   }
-
   logger.info({ port }, "Server listening");
 });
+
+// Start Discord bot (non-blocking)
+startBot().catch(err => logger.error({ err }, "Bot startup failed"));
+
+// Self-ping every 4 minutes to keep Replit awake
+setInterval(() => {
+  fetch(`http://localhost:${port}/api/ping`).catch(() => {});
+}, 4 * 60 * 1_000);

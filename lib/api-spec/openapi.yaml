@@ -1,22 +1,45 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Discord Utility Bot API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Discord OAuth2 authentication
+  - name: guilds
+    description: Discord guild (server) operations
+  - name: moderation
+    description: Moderation actions
+  - name: warnings
+    description: User warning management
+  - name: automod
+    description: Automod rule configuration
+  - name: reaction-roles
+    description: Reaction role management
+  - name: commands
+    description: Custom command management
+  - name: welcome
+    description: Welcome message configuration
+  - name: reminders
+    description: Reminder management
+  - name: polls
+    description: Poll management
+  - name: stats
+    description: Bot statistics
+  - name: rules
+    description: Server rules management
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +47,1447 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/discord:
+    get:
+      operationId: discordAuthRedirect
+      tags: [auth]
+      summary: Redirect to Discord OAuth2
+      responses:
+        "302":
+          description: Redirect to Discord
+
+  /auth/discord/callback:
+    get:
+      operationId: discordAuthCallback
+      tags: [auth]
+      summary: Discord OAuth2 callback
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: state
+          in: query
+          schema:
+            type: string
+      responses:
+        "302":
+          description: Redirect after auth
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current authenticated user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiscordUser"
+        "401":
+          description: Not authenticated
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Log out
+      responses:
+        "200":
+          description: Logged out
+
+  /guilds:
+    get:
+      operationId: listGuilds
+      tags: [guilds]
+      summary: List guilds the bot manages
+      responses:
+        "200":
+          description: List of guilds
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Guild"
+
+  /guilds/{guildId}:
+    get:
+      operationId: getGuild
+      tags: [guilds]
+      summary: Get guild details
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Guild details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuildDetail"
+
+  /guilds/{guildId}/stats:
+    get:
+      operationId: getGuildStats
+      tags: [stats]
+      summary: Get guild bot statistics
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Guild stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuildStats"
+
+  /guilds/{guildId}/moderation:
+    get:
+      operationId: listModerationLogs
+      tags: [moderation]
+      summary: List moderation action logs
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Moderation logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ModerationLog"
+
+  /guilds/{guildId}/moderation/ban:
+    post:
+      operationId: banUser
+      tags: [moderation]
+      summary: Ban a user from the guild
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BanInput"
+      responses:
+        "200":
+          description: User banned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModerationLog"
+
+  /guilds/{guildId}/moderation/kick:
+    post:
+      operationId: kickUser
+      tags: [moderation]
+      summary: Kick a user from the guild
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/KickInput"
+      responses:
+        "200":
+          description: User kicked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModerationLog"
+
+  /guilds/{guildId}/moderation/mute:
+    post:
+      operationId: muteUser
+      tags: [moderation]
+      summary: Mute (timeout) a user
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MuteInput"
+      responses:
+        "200":
+          description: User muted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModerationLog"
+
+  /guilds/{guildId}/warnings:
+    get:
+      operationId: listWarnings
+      tags: [warnings]
+      summary: List all warnings in a guild
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Warnings list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Warning"
+    post:
+      operationId: createWarning
+      tags: [warnings]
+      summary: Issue a warning to a user
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WarningInput"
+      responses:
+        "201":
+          description: Warning issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Warning"
+
+  /guilds/{guildId}/warnings/{warningId}:
+    delete:
+      operationId: deleteWarning
+      tags: [warnings]
+      summary: Remove a warning
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: warningId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Warning deleted
+
+  /guilds/{guildId}/automod:
+    get:
+      operationId: getAutomodConfig
+      tags: [automod]
+      summary: Get automod configuration
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Automod config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutomodConfig"
+    patch:
+      operationId: updateAutomodConfig
+      tags: [automod]
+      summary: Update automod configuration
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AutomodConfigUpdate"
+      responses:
+        "200":
+          description: Updated automod config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutomodConfig"
+
+  /guilds/{guildId}/reaction-roles:
+    get:
+      operationId: listReactionRoles
+      tags: [reaction-roles]
+      summary: List reaction role configurations
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Reaction roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReactionRole"
+    post:
+      operationId: createReactionRole
+      tags: [reaction-roles]
+      summary: Create a reaction role
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReactionRoleInput"
+      responses:
+        "201":
+          description: Created reaction role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReactionRole"
+
+  /guilds/{guildId}/reaction-roles/{id}:
+    patch:
+      operationId: updateReactionRole
+      tags: [reaction-roles]
+      summary: Update a reaction role
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReactionRoleUpdate"
+      responses:
+        "200":
+          description: Updated reaction role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReactionRole"
+    delete:
+      operationId: deleteReactionRole
+      tags: [reaction-roles]
+      summary: Delete a reaction role
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /guilds/{guildId}/commands:
+    get:
+      operationId: listCustomCommands
+      tags: [commands]
+      summary: List custom commands
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Custom commands
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CustomCommand"
+    post:
+      operationId: createCustomCommand
+      tags: [commands]
+      summary: Create a custom command
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomCommandInput"
+      responses:
+        "201":
+          description: Created command
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomCommand"
+
+  /guilds/{guildId}/commands/{id}:
+    patch:
+      operationId: updateCustomCommand
+      tags: [commands]
+      summary: Update a custom command
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomCommandUpdate"
+      responses:
+        "200":
+          description: Updated command
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomCommand"
+    delete:
+      operationId: deleteCustomCommand
+      tags: [commands]
+      summary: Delete a custom command
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /guilds/{guildId}/welcome:
+    get:
+      operationId: getWelcomeConfig
+      tags: [welcome]
+      summary: Get welcome message configuration
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Welcome config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WelcomeConfig"
+    patch:
+      operationId: updateWelcomeConfig
+      tags: [welcome]
+      summary: Update welcome message config
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WelcomeConfigUpdate"
+      responses:
+        "200":
+          description: Updated welcome config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WelcomeConfig"
+
+  /guilds/{guildId}/reminders:
+    get:
+      operationId: listReminders
+      tags: [reminders]
+      summary: List reminders for the guild
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Reminders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Reminder"
+    post:
+      operationId: createReminder
+      tags: [reminders]
+      summary: Create a reminder
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReminderInput"
+      responses:
+        "201":
+          description: Created reminder
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reminder"
+
+  /guilds/{guildId}/reminders/{id}:
+    delete:
+      operationId: deleteReminder
+      tags: [reminders]
+      summary: Delete a reminder
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /guilds/{guildId}/polls:
+    get:
+      operationId: listPolls
+      tags: [polls]
+      summary: List polls for the guild
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Polls
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Poll"
+    post:
+      operationId: createPoll
+      tags: [polls]
+      summary: Create a poll
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PollInput"
+      responses:
+        "201":
+          description: Created poll
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Poll"
+
+  /guilds/{guildId}/polls/{id}:
+    get:
+      operationId: getPoll
+      tags: [polls]
+      summary: Get poll details
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Poll details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Poll"
+    delete:
+      operationId: closePoll
+      tags: [polls]
+      summary: Close/delete a poll
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Closed
+
+  /stats:
+    get:
+      operationId: getBotStats
+      tags: [stats]
+      summary: Get overall bot statistics
+      responses:
+        "200":
+          description: Bot stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BotStats"
+
+  /bot:
+    get:
+      operationId: getBotInfo
+      tags: [stats]
+      summary: Get public bot info (avatar, guilds, invite URL)
+      responses:
+        "200":
+          description: Bot info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BotInfo"
+
+  /guilds/{guildId}/level-roles:
+    get:
+      operationId: listLevelRoles
+      tags: [guilds]
+      summary: List level role configurations
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Level roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LevelRole"
+    post:
+      operationId: createLevelRole
+      tags: [guilds]
+      summary: Create a level role
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LevelRoleInput"
+      responses:
+        "201":
+          description: Created level role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LevelRole"
+
+  /guilds/{guildId}/level-roles/{id}:
+    patch:
+      operationId: updateLevelRole
+      tags: [guilds]
+      summary: Update a level role
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LevelRoleUpdate"
+      responses:
+        "200":
+          description: Updated level role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LevelRole"
+    delete:
+      operationId: deleteLevelRole
+      tags: [guilds]
+      summary: Delete a level role
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /guilds/{guildId}/rules:
+    get:
+      operationId: listGuildRules
+      tags: [rules]
+      summary: Get server rules (all 12 premade, with enabled state)
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Rules list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ServerRule"
+    patch:
+      operationId: updateGuildRules
+      tags: [rules]
+      summary: Enable/disable server rules
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/ServerRuleUpdate"
+      responses:
+        "200":
+          description: Updated rules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ServerRule"
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
 
+    DiscordUser:
+      type: object
+      required: [id, username, discriminator, avatar]
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        discriminator:
+          type: string
+        avatar:
+          type: ["string", "null"]
+        globalName:
+          type: ["string", "null"]
+
+    Guild:
+      type: object
+      required: [id, name, memberCount, botPresent]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        icon:
+          type: ["string", "null"]
+        memberCount:
+          type: integer
+        botPresent:
+          type: boolean
+
+    GuildDetail:
+      type: object
+      required: [id, name, memberCount, channels, roles]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        icon:
+          type: ["string", "null"]
+        memberCount:
+          type: integer
+        channels:
+          type: array
+          items:
+            $ref: "#/components/schemas/Channel"
+        roles:
+          type: array
+          items:
+            $ref: "#/components/schemas/Role"
+
+    Channel:
+      type: object
+      required: [id, name, type]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+
+    Role:
+      type: object
+      required: [id, name, color]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        color:
+          type: integer
+
+    GuildStats:
+      type: object
+      required: [guildId, totalWarnings, totalBans, totalMutes, totalKicks, activeReminders, activePolls, customCommands, reactionRoles]
+      properties:
+        guildId:
+          type: string
+        totalWarnings:
+          type: integer
+        totalBans:
+          type: integer
+        totalMutes:
+          type: integer
+        totalKicks:
+          type: integer
+        activeReminders:
+          type: integer
+        activePolls:
+          type: integer
+        customCommands:
+          type: integer
+        reactionRoles:
+          type: integer
+
+    BotStats:
+      type: object
+      required: [totalGuilds, totalUsers, totalCommands, uptime, ping]
+      properties:
+        totalGuilds:
+          type: integer
+        totalUsers:
+          type: integer
+        totalCommands:
+          type: integer
+        uptime:
+          type: integer
+        ping:
+          type: integer
+
+    ModerationLog:
+      type: object
+      required: [id, guildId, type, targetUserId, targetUsername, moderatorId, moderatorUsername, reason, createdAt]
+      properties:
+        id:
+          type: integer
+        guildId:
+          type: string
+        type:
+          type: string
+          enum: [ban, kick, mute, unmute, warn]
+        targetUserId:
+          type: string
+        targetUsername:
+          type: string
+        moderatorId:
+          type: string
+        moderatorUsername:
+          type: string
+        reason:
+          type: string
+        duration:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+
+    BanInput:
+      type: object
+      required: [userId, reason]
+      properties:
+        userId:
+          type: string
+        reason:
+          type: string
+        deleteMessageDays:
+          type: integer
+          default: 0
+
+    KickInput:
+      type: object
+      required: [userId, reason]
+      properties:
+        userId:
+          type: string
+        reason:
+          type: string
+
+    MuteInput:
+      type: object
+      required: [userId, reason, duration]
+      properties:
+        userId:
+          type: string
+        reason:
+          type: string
+        duration:
+          type: integer
+          description: Duration in minutes
+
+    Warning:
+      type: object
+      required: [id, guildId, userId, username, moderatorId, moderatorUsername, reason, createdAt]
+      properties:
+        id:
+          type: integer
+        guildId:
+          type: string
+        userId:
+          type: string
+        username:
+          type: string
+        moderatorId:
+          type: string
+        moderatorUsername:
+          type: string
+        reason:
+          type: string
+        createdAt:
+          type: string
+
+    WarningInput:
+      type: object
+      required: [userId, username, moderatorId, moderatorUsername, reason]
+      properties:
+        userId:
+          type: string
+        username:
+          type: string
+        moderatorId:
+          type: string
+        moderatorUsername:
+          type: string
+        reason:
+          type: string
+
+    AutomodConfig:
+      type: object
+      required: [guildId, enabled, antiSpam, antiLinks, antiProfanity, maxMentions, logChannelId]
+      properties:
+        guildId:
+          type: string
+        enabled:
+          type: boolean
+        antiSpam:
+          type: boolean
+        antiLinks:
+          type: boolean
+        antiProfanity:
+          type: boolean
+        maxMentions:
+          type: integer
+        logChannelId:
+          type: ["string", "null"]
+        bannedWords:
+          type: array
+          items:
+            type: string
+        allowedLinks:
+          type: array
+          items:
+            type: string
+
+    AutomodConfigUpdate:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        antiSpam:
+          type: boolean
+        antiLinks:
+          type: boolean
+        antiProfanity:
+          type: boolean
+        maxMentions:
+          type: integer
+        logChannelId:
+          type: ["string", "null"]
+        bannedWords:
+          type: array
+          items:
+            type: string
+        allowedLinks:
+          type: array
+          items:
+            type: string
+
+    ReactionRole:
+      type: object
+      required: [id, guildId, channelId, messageId, emoji, roleId, roleName, label, imageUrl, preset]
+      properties:
+        id:
+          type: integer
+        guildId:
+          type: string
+        channelId:
+          type: string
+        messageId:
+          type: string
+        emoji:
+          type: string
+        roleId:
+          type: string
+        roleName:
+          type: string
+        label:
+          type: string
+        imageUrl:
+          type: ["string", "null"]
+        preset:
+          type: ["string", "null"]
+          description: Preset name if using a preset configuration
+
+    ReactionRoleInput:
+      type: object
+      required: [channelId, messageId, emoji, roleId, roleName, label]
+      properties:
+        channelId:
+          type: string
+        messageId:
+          type: string
+        emoji:
+          type: string
+        roleId:
+          type: string
+        roleName:
+          type: string
+        label:
+          type: string
+        imageUrl:
+          type: ["string", "null"]
+        preset:
+          type: ["string", "null"]
+
+    ReactionRoleUpdate:
+      type: object
+      properties:
+        emoji:
+          type: string
+        roleId:
+          type: string
+        roleName:
+          type: string
+        label:
+          type: string
+        imageUrl:
+          type: ["string", "null"]
+        preset:
+          type: ["string", "null"]
+
+    CustomCommand:
+      type: object
+      required: [id, guildId, trigger, response, enabled, createdAt]
+      properties:
+        id:
+          type: integer
+        guildId:
+          type: string
+        trigger:
+          type: string
+        response:
+          type: string
+        enabled:
+          type: boolean
+        description:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    CustomCommandInput:
+      type: object
+      required: [trigger, response]
+      properties:
+        trigger:
+          type: string
+        response:
+          type: string
+        enabled:
+          type: boolean
+          default: true
+        description:
+          type: ["string", "null"]
+
+    CustomCommandUpdate:
+      type: object
+      properties:
+        trigger:
+          type: string
+        response:
+          type: string
+        enabled:
+          type: boolean
+        description:
+          type: ["string", "null"]
+
+    WelcomeConfig:
+      type: object
+      required: [guildId, enabled, channelId, message, embedEnabled, embedColor]
+      properties:
+        guildId:
+          type: string
+        enabled:
+          type: boolean
+        channelId:
+          type: ["string", "null"]
+        message:
+          type: string
+        embedEnabled:
+          type: boolean
+        embedColor:
+          type: string
+        embedTitle:
+          type: ["string", "null"]
+        embedDescription:
+          type: ["string", "null"]
+        assignRoleId:
+          type: ["string", "null"]
+
+    WelcomeConfigUpdate:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        channelId:
+          type: ["string", "null"]
+        message:
+          type: string
+        embedEnabled:
+          type: boolean
+        embedColor:
+          type: string
+        embedTitle:
+          type: ["string", "null"]
+        embedDescription:
+          type: ["string", "null"]
+        assignRoleId:
+          type: ["string", "null"]
+
+    Reminder:
+      type: object
+      required: [id, guildId, channelId, userId, message, scheduledAt, createdAt, sent]
+      properties:
+        id:
+          type: integer
+        guildId:
+          type: string
+        channelId:
+          type: string
+        userId:
+          type: string
+        message:
+          type: string
+        scheduledAt:
+          type: string
+        createdAt:
+          type: string
+        sent:
+          type: boolean
+
+    ReminderInput:
+      type: object
+      required: [channelId, userId, message, scheduledAt]
+      properties:
+        channelId:
+          type: string
+        userId:
+          type: string
+        message:
+          type: string
+        scheduledAt:
+          type: string
+
+    Poll:
+      type: object
+      required: [id, guildId, channelId, question, options, createdAt, active]
+      properties:
+        id:
+          type: integer
+        guildId:
+          type: string
+        channelId:
+          type: string
+        messageId:
+          type: ["string", "null"]
+        question:
+          type: string
+        options:
+          type: array
+          items:
+            $ref: "#/components/schemas/PollOption"
+        createdAt:
+          type: string
+        endsAt:
+          type: ["string", "null"]
+        active:
+          type: boolean
+
+    PollOption:
+      type: object
+      required: [emoji, text, votes]
+      properties:
+        emoji:
+          type: string
+        text:
+          type: string
+        votes:
+          type: integer
+
+    PollInput:
+      type: object
+      required: [channelId, question, options]
+      properties:
+        channelId:
+          type: string
+        question:
+          type: string
+        options:
+          type: array
+          items:
+            type: string
+          minItems: 2
+          maxItems: 10
+        endsAt:
+          type: ["string", "null"]
+
+    LevelRole:
+      type: object
+      required: [id, guildId, level, roleId, roleName, createdAt]
+      properties:
+        id:
+          type: integer
+        guildId:
+          type: string
+        level:
+          type: integer
+        roleId:
+          type: string
+        roleName:
+          type: string
+        createdAt:
+          type: string
+
+    LevelRoleInput:
+      type: object
+      required: [level, roleId, roleName]
+      properties:
+        level:
+          type: integer
+          minimum: 1
+        roleId:
+          type: string
+        roleName:
+          type: string
+
+    LevelRoleUpdate:
+      type: object
+      properties:
+        level:
+          type: integer
+          minimum: 1
+        roleId:
+          type: string
+        roleName:
+          type: string
+
+    ServerRule:
+      type: object
+      required: [key, label, enabled]
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        enabled:
+          type: boolean
+
+    ServerRuleUpdate:
+      type: object
+      required: [key, enabled]
+      properties:
+        key:
+          type: string
+        enabled:
+          type: boolean
+
+    BotInfo:
+      type: object
+      required: [id, username, tag, guildCount, inviteUrl, guilds]
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        tag:
+          type: string
+        avatar:
+          type: ["string", "null"]
+        guildCount:
+          type: integer
+        inviteUrl:
+          type: string
+        guilds:
+          type: array
+          items:
+            type: object
+            required: [id, name, memberCount]
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              icon:
+                type: ["string", "null"]
+              memberCount:
+                type: integer
