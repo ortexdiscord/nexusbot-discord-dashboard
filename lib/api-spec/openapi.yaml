@@ -1138,6 +1138,12 @@ components:
           type: array
           items:
             type: string
+        aiAutomodEnabled:
+          type: boolean
+        aiAutomodSensitivity:
+          type: string
+        aiAutomodAction:
+          type: string
 
     AutomodConfigUpdate:
       type: object
@@ -1162,6 +1168,12 @@ components:
           type: array
           items:
             type: string
+        aiAutomodEnabled:
+          type: boolean
+        aiAutomodSensitivity:
+          type: string
+        aiAutomodAction:
+          type: string
 
     ReactionRole:
       type: object

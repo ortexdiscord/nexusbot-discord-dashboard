@@ -21,6 +21,9 @@ router.get("/automod", async (req: Request, res: Response) => {
       logChannelId: null,
       bannedWords: [],
       allowedLinks: [],
+      aiAutomodEnabled: false,
+      aiAutomodSensitivity: "medium",
+      aiAutomodAction: "delete",
     });
     return;
   }
@@ -50,6 +53,9 @@ router.patch("/automod", async (req: Request, res: Response) => {
       logChannelId: parsed.data.logChannelId ?? null,
       bannedWords: parsed.data.bannedWords ?? [],
       allowedLinks: parsed.data.allowedLinks ?? [],
+      aiAutomodEnabled: parsed.data.aiAutomodEnabled ?? false,
+      aiAutomodSensitivity: parsed.data.aiAutomodSensitivity ?? "medium",
+      aiAutomodAction: parsed.data.aiAutomodAction ?? "delete",
     }).returning();
     config = inserted;
   } else {

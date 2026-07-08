@@ -57,7 +57,7 @@ const pendingCaptchas = new Map<string, { answer: number; channelId: string; exp
 export function getBotClient(): Client | null { return client; }
 
 export async function startBot() {
-  const token = process.env.discordbot;
+  const token = process.env["Discordbot"];
   if (!token) { logger.warn("discordbot token not found — bot disabled"); return; }
 
   client = new Client({

@@ -55,16 +55,16 @@ export default function Automod() {
       setMaxMentions(config.maxMentions);
       setBannedWords(config.bannedWords ?? []);
       setAllowedLinks(config.allowedLinks ?? []);
-      setAiAutomodEnabled((config as any).aiAutomodEnabled ?? false);
-      setAiAutomodSensitivity((config as any).aiAutomodSensitivity ?? "medium");
-      setAiAutomodAction((config as any).aiAutomodAction ?? "delete");
+      setAiAutomodEnabled(config.aiAutomodEnabled ?? false);
+      setAiAutomodSensitivity(config.aiAutomodSensitivity ?? "medium");
+      setAiAutomodAction(config.aiAutomodAction ?? "delete");
       markSaved({
         enabled: config.enabled, antiSpam: config.antiSpam, antiLinks: config.antiLinks,
         antiProfanity: config.antiProfanity, maxMentions: config.maxMentions,
         bannedWords: config.bannedWords ?? [], allowedLinks: config.allowedLinks ?? [],
-        aiAutomodEnabled: (config as any).aiAutomodEnabled ?? false,
-        aiAutomodSensitivity: (config as any).aiAutomodSensitivity ?? "medium",
-        aiAutomodAction: (config as any).aiAutomodAction ?? "delete",
+        aiAutomodEnabled: config.aiAutomodEnabled ?? false,
+        aiAutomodSensitivity: config.aiAutomodSensitivity ?? "medium",
+        aiAutomodAction: config.aiAutomodAction ?? "delete",
       });
     }
   }, [config]);
