@@ -243,7 +243,7 @@ export default function XpSettingsPage() {
         )}
 
         <Tabs defaultValue="settings" className="space-y-4">
-          <TabsList className="bg-card/50 border border-border/50 flex-wrap h-auto gap-1">
+          <TabsList className="bg-card/50 border border-border/50 flex overflow-x-auto h-auto gap-1 w-full scrollbar-hide">
             <TabsTrigger value="settings" className="gap-1.5"><Settings className="size-3.5" />XP Settings</TabsTrigger>
             <TabsTrigger value="rewards" className="gap-1.5"><Star className="size-3.5" />Role Rewards</TabsTrigger>
             <TabsTrigger value="zones" className="gap-1.5"><Hash className="size-3.5" />No-XP Zones</TabsTrigger>

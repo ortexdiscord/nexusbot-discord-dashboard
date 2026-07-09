@@ -98,6 +98,7 @@ export async function startBot() {
     startStatsChannelsLoop();
     startGiveawayLoop();
     startPresenceCycling(c);
+    startSelfPingLoop();
   });
 
   // ── Reconnect watchdog ──────────────────────────────────────────────────────
@@ -431,6 +432,14 @@ export async function startBot() {
       const guildId = message.guild.id;
       const userId = message.author.id;
 
+      // ── AI Automod (runs regardless of XP setting) ──────────────────────────
+      try {
+        const [aConfig] = await db.select().from(automodConfigTable).where(eq(automodConfigTable.guildId, guildId));
+        if (aConfig?.enabled && aConfig?.aiAutomodEnabled) {
+          await runAiAutomod(message, aConfig.aiAutomodSensitivity, aConfig.aiAutomodAction, aConfig.logChannelId);
+        }
+      } catch (err) { logger.error({ err }, "AI automod error (top-level)"); }
+
       const [settings] = await db.select().from(xpSettingsTable).where(eq(xpSettingsTable.guildId, guildId));
       if (!settings?.enabled) return;
 
@@ -566,14 +575,7 @@ export async function startBot() {
       }
     } catch (err) { logger.error({ err }, "Captcha check error"); }
 
-    // ── AI Automod ──────────────────────────────────────────────────────────
-    try {
-      const guildId = message.guild!.id;
-      const [aConfig] = await db.select().from(automodConfigTable).where(eq(automodConfigTable.guildId, guildId));
-      if (aConfig?.enabled && aConfig?.aiAutomodEnabled) {
-        await runAiAutomod(message, aConfig.aiAutomodSensitivity, aConfig.aiAutomodAction, aConfig.logChannelId);
-      }
-    } catch (err) { logger.error({ err }, "AI automod error"); }
+    // AI automod is now handled at top of this handler (before XP early-return)
   });
 
   // ── Message logs ────────────────────────────────────────────────────────────
@@ -1040,6 +1042,17 @@ function startGiveawayLoop() {
       }
     } catch (err) { logger.error({ err }, "Giveaway loop error"); }
   }, 30_000);
+}
+
+// ── Self-ping keep-alive (prevents deployment from becoming unresponsive) ─────
+function startSelfPingLoop() {
+  const domains = (process.env.REPLIT_DOMAINS ?? "").split(",").map(d => d.trim()).filter(Boolean);
+  const base = domains[0] ? `https://${domains[0]}` : "http://localhost:5000";
+  setInterval(async () => {
+    try {
+      await fetch(`${base}/api/health`, { signal: AbortSignal.timeout(10_000) });
+    } catch { /* silent — just keeping the process warm */ }
+  }, 4 * 60 * 60 * 1000); // every 4 hours
 }
 
 // ── Presence cycling ─────────────────────────────────────────────────────────

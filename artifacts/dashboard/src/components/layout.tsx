@@ -391,30 +391,6 @@ function SidebarContent({
           </div>
         </div>
 
-        {/* Guide button */}
-        {/* Mobile: Add to Server buttons */}
-        <div className="md:hidden rounded-xl overflow-hidden border border-purple-500/20 bg-purple-500/5 p-2 space-y-1.5">
-          <p className="px-1 text-[10px] font-bold tracking-widest uppercase text-purple-300/40">
-            Add to a Server
-          </p>
-          <button
-            type="button"
-            onClick={() => { onInvite?.("full"); onNavigate?.(); }}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-yellow-300/80 hover:text-yellow-200 hover:bg-white/[0.06]"
-          >
-            <Zap className="size-3 shrink-0" />
-            Full Permissions
-          </button>
-          <button
-            type="button"
-            onClick={() => { onInvite?.("min"); onNavigate?.(); }}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-green-400/70 hover:text-green-300 hover:bg-white/[0.06]"
-          >
-            <ShieldCheck className="size-3 shrink-0" />
-            Minimal Permissions
-          </button>
-        </div>
-
         <button
           type="button"
           onClick={onGuide}
@@ -433,8 +409,8 @@ function SidebarContent({
             </div>
           </div>
         ) : user ? (
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2.5 min-w-0">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2.5 px-1 min-w-0">
               <Avatar className="size-8 shrink-0 ring-1 ring-white/10">
                 <AvatarImage
                   src={user.avatar
@@ -450,14 +426,14 @@ function SidebarContent({
                 <span className="text-purple-300/50 truncate">@{user.username}</span>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
+            <button
+              type="button"
               onClick={onLogout}
-              className="text-purple-300/50 hover:text-white hover:bg-white/[0.06] shrink-0 size-8 rounded-lg"
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-red-400/70 hover:text-red-300 hover:bg-red-500/[0.08] transition-colors"
             >
-              <LogOut className="size-3.5" />
-            </Button>
+              <LogOut className="size-3.5 shrink-0" />
+              Log out
+            </button>
           </div>
         ) : null}
       </div>
