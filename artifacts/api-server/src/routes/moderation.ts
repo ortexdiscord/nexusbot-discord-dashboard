@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from "express";
 import { db } from "@workspace/db";
-import { moderationLogsTable, warningsTable } from "@workspace/db";
+import { moderationLogsTable, warningsTable, punishmentThresholdsTable } from "@workspace/db";
 import { eq, desc, and } from "drizzle-orm";
 import {
   BanUserBody,
@@ -118,6 +118,25 @@ router.delete("/warnings/:warningId", async (req: Request, res: Response) => {
   const warningId = parseInt(String(req.params["warningId"] ?? "0"));
   await db.delete(warningsTable).where(eq(warningsTable.id, warningId));
   res.status(204).send();
+});
+
+router.get("/punishment-thresholds", async (req: Request, res: Response) => {
+  const guildId = String(req.params["guildId"]);
+  const [row] = await db.select().from(punishmentThresholdsTable).where(eq(punishmentThresholdsTable.guildId, guildId));
+  res.json(row ?? { guildId, enabled: false, thresholds: [] });
+});
+
+router.put("/punishment-thresholds", async (req: Request, res: Response) => {
+  const guildId = String(req.params["guildId"]);
+  const { enabled, thresholds } = req.body;
+  const existing = await db.select().from(punishmentThresholdsTable).where(eq(punishmentThresholdsTable.guildId, guildId));
+  let row;
+  if (existing.length === 0) {
+    [row] = await db.insert(punishmentThresholdsTable).values({ guildId, enabled: !!enabled, thresholds: thresholds ?? [] }).returning();
+  } else {
+    [row] = await db.update(punishmentThresholdsTable).set({ enabled: !!enabled, thresholds: thresholds ?? [], updatedAt: new Date() }).where(eq(punishmentThresholdsTable.guildId, guildId)).returning();
+  }
+  res.json(row);
 });
 
 export default router;

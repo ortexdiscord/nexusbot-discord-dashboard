@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, boolean, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -33,3 +33,12 @@ export const warningsTable = pgTable("warnings", {
 export const insertWarningSchema = createInsertSchema(warningsTable).omit({ id: true, createdAt: true });
 export type InsertWarning = z.infer<typeof insertWarningSchema>;
 export type Warning = typeof warningsTable.$inferSelect;
+
+export const punishmentThresholdsTable = pgTable("punishment_thresholds", {
+  guildId: text("guild_id").primaryKey(),
+  enabled: boolean("enabled").notNull().default(false),
+  thresholds: jsonb("thresholds").notNull().default([]),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type PunishmentThresholds = typeof punishmentThresholdsTable.$inferSelect;

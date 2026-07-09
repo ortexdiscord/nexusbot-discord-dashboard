@@ -432,6 +432,27 @@ export async function startBot() {
       const guildId = message.guild.id;
       const userId = message.author.id;
 
+      // ── !commands prefix ─────────────────────────────────────────────────────
+      if (message.content.trim().toLowerCase() === "!commands") {
+        const { EmbedBuilder: EB } = await import("discord.js");
+        const embed = new EB()
+          .setColor(0x7C3AED)
+          .setTitle("⚡ Umbra Utilities — Commands")
+          .setDescription([
+            "**Moderation**",
+            "`/ban` `/kick` `/mute` `/warn` `/warnings` `/clear`",
+            "",
+            "**Information**",
+            "`/userinfo` `/serverinfo` `/ping`",
+            "",
+            "**Utility**",
+            "`/rules` `/poll` `/remind`",
+            "",
+            "💡 All commands use Discord slash commands. Type `/` to see them.",
+          ].join("\n"));
+        await message.reply({ embeds: [embed] }).catch(() => {});
+      }
+
       // ── AI Automod (runs regardless of XP setting) ──────────────────────────
       try {
         const [aConfig] = await db.select().from(automodConfigTable).where(eq(automodConfigTable.guildId, guildId));

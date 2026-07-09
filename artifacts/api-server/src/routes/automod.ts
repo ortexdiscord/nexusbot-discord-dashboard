@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import { db } from "@workspace/db";
-import { automodConfigTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { automodConfigTable, automodEventsTable } from "@workspace/db";
+import { eq, desc } from "drizzle-orm";
 import { UpdateAutomodConfigBody } from "@workspace/api-zod";
 
 const router = Router({ mergeParams: true });
@@ -67,6 +67,15 @@ router.patch("/automod", async (req: Request, res: Response) => {
   }
 
   res.json(config);
+});
+
+router.get("/automod/events", async (req: Request, res: Response) => {
+  const guildId = String(req.params["guildId"]);
+  const events = await db.select().from(automodEventsTable)
+    .where(eq(automodEventsTable.guildId, guildId))
+    .orderBy(desc(automodEventsTable.createdAt))
+    .limit(100);
+  res.json(events.map(e => ({ ...e, createdAt: e.createdAt.toISOString() })));
 });
 
 export default router;

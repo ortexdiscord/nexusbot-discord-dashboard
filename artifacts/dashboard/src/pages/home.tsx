@@ -262,13 +262,28 @@ export default function Home() {
           }}
         >
           <div className="absolute inset-0 pointer-events-none" style={{ animation: "umbra-gradient-pulse 8s ease-in-out infinite" }} />
-          <div className="relative">
-            <h1 className="text-2xl font-extrabold text-white">
-              {userLoading
-                ? <Skeleton className="h-8 w-52 inline-block bg-white/10" />
-                : `Welcome back, ${user?.globalName || user?.username}!`}
-            </h1>
-            <p className="text-purple-300/60 mt-1 text-sm">Select a server below to manage it with Umbra Utilities.</p>
+          <div className="relative flex items-center gap-4">
+            {userLoading ? (
+              <Skeleton className="size-14 rounded-full shrink-0 bg-white/10" />
+            ) : user?.avatar ? (
+              <img
+                src={`https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`}
+                alt={user.username}
+                className="size-14 rounded-full shrink-0 ring-2 ring-yellow-400/30 shadow-lg"
+              />
+            ) : (
+              <div className="size-14 rounded-full shrink-0 ring-2 ring-purple-400/30 bg-purple-900 flex items-center justify-center text-lg font-bold text-purple-200">
+                {user?.username?.slice(0, 2).toUpperCase() ?? "?"}
+              </div>
+            )}
+            <div>
+              <h1 className="text-2xl font-extrabold text-white">
+                {userLoading
+                  ? <Skeleton className="h-8 w-52 inline-block bg-white/10" />
+                  : `Welcome back, ${user?.globalName || user?.username}!`}
+              </h1>
+              <p className="text-purple-300/60 mt-0.5 text-sm">Select a server below to manage it with Umbra Utilities.</p>
+            </div>
           </div>
         </div>
 

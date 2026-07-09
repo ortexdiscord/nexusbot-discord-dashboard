@@ -180,7 +180,7 @@ const NAV_GROUPS = (guildId: string): NavGroup[] => [
 ];
 
 function SidebarContent({
-  guildId, user, isLoading, onLogout, onNavigate, onGuide, onInvite,
+  guildId, user, isLoading, onLogout, onNavigate, onGuide, onInvite, onProfileInfo,
 }: {
   guildId?: string;
   user: any;
@@ -189,6 +189,7 @@ function SidebarContent({
   onNavigate?: () => void;
   onGuide?: () => void;
   onInvite?: (type: "full" | "min") => void;
+  onProfileInfo?: () => void;
 }) {
   const [location] = useLocation();
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
@@ -410,8 +411,12 @@ function SidebarContent({
           </div>
         ) : user ? (
           <div className="space-y-1">
-            <div className="flex items-center gap-2.5 px-1 min-w-0">
-              <Avatar className="size-8 shrink-0 ring-1 ring-white/10">
+            <button
+              type="button"
+              onClick={onProfileInfo}
+              className="w-full flex items-center gap-2.5 px-1 min-w-0 rounded-xl py-1.5 hover:bg-white/[0.05] transition-colors group text-left"
+            >
+              <Avatar className="size-8 shrink-0 ring-1 ring-white/10 group-hover:ring-purple-400/40 transition-all">
                 <AvatarImage
                   src={user.avatar
                     ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
@@ -421,11 +426,12 @@ function SidebarContent({
                   {user.username.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex flex-col text-xs min-w-0">
+              <div className="flex flex-col text-xs min-w-0 flex-1">
                 <span className="font-medium text-white truncate">{user.globalName || user.username}</span>
                 <span className="text-purple-300/50 truncate">@{user.username}</span>
               </div>
-            </div>
+              <ChevronDown className="size-3 text-purple-300/30 group-hover:text-purple-300/60 shrink-0 rotate-[-90deg]" />
+            </button>
             <button
               type="button"
               onClick={onLogout}
@@ -441,9 +447,63 @@ function SidebarContent({
   );
 }
 
+function ProfileDialog({ open, onClose, user }: { open: boolean; onClose: () => void; user: any }) {
+  const createdAt = user?.id
+    ? new Date(Number((BigInt(user.id) >> 22n) + 1420070400000n))
+    : null;
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="bg-card border-border max-w-sm">
+        <DialogHeader><DialogTitle>Account Info</DialogTitle></DialogHeader>
+        {user && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              {user.avatar ? (
+                <img
+                  src={`https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`}
+                  className="size-16 rounded-full ring-2 ring-purple-400/30 shadow-lg"
+                  alt={user.username}
+                />
+              ) : (
+                <div className="size-16 rounded-full bg-purple-900 flex items-center justify-center text-xl font-bold text-purple-200 ring-2 ring-purple-400/30">
+                  {user.username?.slice(0, 2).toUpperCase()}
+                </div>
+              )}
+              <div>
+                <p className="font-bold text-white text-lg leading-tight">{user.globalName || user.username}</p>
+                <p className="text-sm text-purple-300/60">@{user.username}</p>
+              </div>
+            </div>
+            <div className="space-y-2 rounded-xl border border-border/40 bg-background/30 divide-y divide-border/30">
+              <div className="flex justify-between items-center px-4 py-2.5">
+                <span className="text-xs text-muted-foreground">User ID</span>
+                <span className="text-xs font-mono text-white/80">{user.id}</span>
+              </div>
+              {createdAt && (
+                <div className="flex justify-between items-center px-4 py-2.5">
+                  <span className="text-xs text-muted-foreground">Account Created</span>
+                  <span className="text-xs text-white/80">{createdAt.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}</span>
+                </div>
+              )}
+              {user.discriminator && user.discriminator !== "0" && (
+                <div className="flex justify-between items-center px-4 py-2.5">
+                  <span className="text-xs text-muted-foreground">Discriminator</span>
+                  <span className="text-xs font-mono text-white/80">#{user.discriminator}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function Layout({ children, guildId }: { children: React.ReactNode; guildId?: string }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [inviteType, setInviteType] = useState<"full" | "min" | null>(null);
   const { data: user, isLoading } = useGetMe({
     query: { queryKey: getGetMeQueryKey(), retry: false },
@@ -463,6 +523,7 @@ export function Layout({ children, guildId }: { children: React.ReactNode; guild
     onNavigate: () => setMobileOpen(false),
     onGuide: () => setGuideOpen(true),
     onInvite: (type: "full" | "min") => { setInviteType(type); setMobileOpen(false); },
+    onProfileInfo: () => setProfileOpen(true),
   };
 
   return (
@@ -553,6 +614,7 @@ export function Layout({ children, guildId }: { children: React.ReactNode; guild
 
       <GuideDialog open={guideOpen} onClose={() => setGuideOpen(false)} />
       <InviteDialog open={inviteType !== null} onClose={() => setInviteType(null)} type={inviteType} />
+      <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)} user={user} />
     </div>
   );
 }

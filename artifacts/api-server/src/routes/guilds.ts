@@ -85,4 +85,28 @@ router.get("/:guildId/stats", async (req: Request, res: Response) => {
   }
 });
 
+router.get("/:guildId/members", async (req: Request, res: Response) => {
+  const guildId = String(req.params["guildId"]);
+  try {
+    const { getBotClient } = await import("../bot");
+    const bot = getBotClient();
+    const guild = bot?.guilds.cache.get(guildId);
+    if (!guild) {
+      res.json([]);
+      return;
+    }
+    const members = guild.members.cache.map(m => ({
+      id: m.user.id,
+      username: m.user.username,
+      globalName: m.user.globalName,
+      displayName: m.displayName,
+      avatar: m.user.avatar,
+      bot: m.user.bot,
+    })).filter(m => !m.bot).slice(0, 500);
+    res.json(members);
+  } catch {
+    res.json([]);
+  }
+});
+
 export default router;

@@ -1,5 +1,7 @@
 import { Message } from "discord.js";
 import { logger } from "../lib/logger";
+import { db } from "@workspace/db";
+import { automodEventsTable } from "@workspace/db";
 
 const OPENROUTER_KEY = process.env["OpenrouterAi"];
 const GEMINI_KEY = process.env["GEMINI_API_KEY"];
@@ -83,6 +85,20 @@ export async function runAiAutomod(
   if (!verdict.flagged) return false;
 
   logger.info({ userId: message.author.id, score: verdict.score, reason: verdict.reason }, "AI Automod flagged message");
+
+  // Persist event to DB for dashboard log
+  try {
+    await db.insert(automodEventsTable).values({
+      guildId: message.guild!.id,
+      userId: message.author.id,
+      username: message.author.username,
+      channelId: message.channelId,
+      content: message.content.slice(0, 500),
+      reason: verdict.reason ?? null,
+      score: verdict.score ?? null,
+      action,
+    });
+  } catch (err) { logger.error({ err }, "Failed to persist automod event"); }
 
   try {
     // Always delete the message

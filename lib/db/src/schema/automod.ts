@@ -1,4 +1,4 @@
-import { pgTable, text, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, boolean, timestamp, serial, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -22,3 +22,18 @@ export const automodConfigTable = pgTable("automod_config", {
 export const insertAutomodConfigSchema = createInsertSchema(automodConfigTable).omit({ updatedAt: true });
 export type InsertAutomodConfig = z.infer<typeof insertAutomodConfigSchema>;
 export type AutomodConfig = typeof automodConfigTable.$inferSelect;
+
+export const automodEventsTable = pgTable("automod_events", {
+  id: serial("id").primaryKey(),
+  guildId: text("guild_id").notNull(),
+  userId: text("user_id").notNull(),
+  username: text("username").notNull(),
+  channelId: text("channel_id").notNull(),
+  content: text("content").notNull(),
+  reason: text("reason"),
+  score: real("score"),
+  action: text("action").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type AutomodEvent = typeof automodEventsTable.$inferSelect;

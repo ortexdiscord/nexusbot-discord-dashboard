@@ -10,10 +10,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Settings, X, Plus, Bot, Zap } from "lucide-react";
+import { Settings, X, Plus, Bot, Zap, AlertTriangle, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useDirtyState } from "@/hooks/use-dirty-state";
 import { UnsavedChangesBadge } from "@/components/unsaved-changes-badge";
+
+interface AutomodEvent {
+  id: number;
+  userId: string;
+  username: string;
+  channelId: string;
+  content: string;
+  reason: string | null;
+  score: number | null;
+  action: string;
+  createdAt: string;
+}
 
 export default function Automod() {
   const { guildId } = useParams<{ guildId: string }>();
@@ -35,10 +47,14 @@ export default function Automod() {
   const [allowedLinks, setAllowedLinks] = useState<string[]>([]);
   const [newWord, setNewWord] = useState("");
   const [newLink, setNewLink] = useState("");
-  // AI Automod
   const [aiAutomodEnabled, setAiAutomodEnabled] = useState(false);
   const [aiAutomodSensitivity, setAiAutomodSensitivity] = useState("medium");
   const [aiAutomodAction, setAiAutomodAction] = useState("delete");
+
+  // Log section
+  const [showLog, setShowLog] = useState(false);
+  const [logEvents, setLogEvents] = useState<AutomodEvent[]>([]);
+  const [logLoading, setLogLoading] = useState(false);
 
   const snapshot = {
     enabled, antiSpam, antiLinks, antiProfanity, maxMentions, bannedWords, allowedLinks,
@@ -68,6 +84,20 @@ export default function Automod() {
       });
     }
   }, [config]);
+
+  const fetchLog = async () => {
+    if (!guildId) return;
+    setLogLoading(true);
+    try {
+      const res = await fetch(`/api/guilds/${guildId}/automod/events`);
+      const data = await res.json();
+      setLogEvents(Array.isArray(data) ? data : []);
+    } catch { setLogEvents([]); } finally { setLogLoading(false); }
+  };
+
+  useEffect(() => {
+    if (showLog) fetchLog();
+  }, [showLog]);
 
   const handleSave = () => {
     updateAutomod.mutate({
@@ -251,6 +281,75 @@ export default function Automod() {
                   {allowedLinks.length === 0 && <p className="text-xs text-muted-foreground">No allowed links added</p>}
                 </div>
               </CardContent>
+            </Card>
+
+            {/* AI Automod Action Log */}
+            <Card className="border-border/50 bg-card/50">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <AlertTriangle className="size-4 text-yellow-400" />
+                      AI Action Log
+                    </CardTitle>
+                    <CardDescription>Recent messages flagged and removed by AI Automod</CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {showLog && (
+                      <Button variant="ghost" size="icon" className="size-7" onClick={fetchLog} disabled={logLoading}>
+                        <RefreshCw className={`size-3.5 ${logLoading ? "animate-spin" : ""}`} />
+                      </Button>
+                    )}
+                    <Switch checked={showLog} onCheckedChange={setShowLog} />
+                  </div>
+                </div>
+              </CardHeader>
+              {showLog && (
+                <CardContent>
+                  {logLoading ? (
+                    <div className="space-y-2">
+                      {[1,2,3].map(i => <Skeleton key={i} className="h-16 w-full rounded-lg" />)}
+                    </div>
+                  ) : !logEvents.length ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <AlertTriangle className="size-8 mx-auto mb-2 opacity-20" />
+                      <p className="text-sm">No AI automod events recorded yet.</p>
+                      <p className="text-xs mt-1 opacity-60">Events will appear here when AI Automod flags messages.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {logEvents.map(e => (
+                        <div key={e.id} className="rounded-lg border border-border/30 bg-background/30 px-4 py-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-sm font-medium text-white">@{e.username}</span>
+                                <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${
+                                  e.action === "delete" ? "border-yellow-500/30 text-yellow-400" :
+                                  e.action === "warn" ? "border-orange-500/30 text-orange-400" :
+                                  "border-red-500/30 text-red-400"
+                                }`}>
+                                  {e.action}
+                                </Badge>
+                                {e.score !== null && (
+                                  <span className="text-[10px] text-muted-foreground">
+                                    {Math.round((e.score ?? 0) * 100)}% harmful
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-0.5 truncate">{e.reason ?? "Flagged content"}</p>
+                              <p className="text-xs text-white/30 mt-0.5 line-clamp-1 italic">"{e.content}"</p>
+                            </div>
+                            <span className="text-[10px] text-muted-foreground shrink-0">
+                              {new Date(e.createdAt).toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              )}
             </Card>
           </div>
         )}
